@@ -36,21 +36,25 @@ class GroceryList extends Component {
         key={item.id}
         roundAvatar
         title={item.name}
-        onPress={() => this.props.nav.navigate('Edit', {selected: item})}
+        onPress={() => this.props.nav.navigate('Edit', 
+          {
+            selected: item,
+            refresh: this._onRefresh.bind(this)
+          }
+        )}
         // hideChevron
       />
     );
   }
 
   _onRefresh() {
-    console.log("refreshing");
+    console.log("Refreshing GroceryList");
     this.setState({refreshing: true});
     if (this.props.refreshData()) {
-      console.log("fetched");
       this.setState({refreshing: false});
-      console.log(this.props.data)
+      console.log("Successfully refreshed grocery data");
     } else {
-      console.log("error");
+      console.log("Could not refresh grocery data");
     }
   }
 
@@ -82,38 +86,31 @@ class GroceryList extends Component {
 export class GroceryScreen extends Component {
   constructor(props) {
     super(props);
-    console.log('constructing');
+    console.log('Constructing GroceryScreen');
 
     this.state = {
       data: [],
     };
 
-
     this.params = { TableName: "shoppingList" };
-
   }
 
   componentDidMount = function() {
-    this.updateState();
+    this.refreshData();
   }
 
-  updateState = function() {
+  refreshData = function() {
     ddb.scan(this.params, this.fetchData);
-    // console.log(this);
-    // console.log(this.state.data);
     return true;
-  }
+  }.bind(this);
 
   fetchData = function(err, data) {
-    console.log('test');
+    console.log('Fetching grocery data...');
     if (err) {
       console.log("Error", err);
     } else {
-      // console.log(data);
-      // console.log(data.Items);
-      // this.setState({data: data.Items});
+      console.log('Updated grocery data');
       this.setState({data: this.formatData(data)});
-      console.log(this.state.data);
     }
   }.bind(this);
 
@@ -125,15 +122,15 @@ export class GroceryScreen extends Component {
         name: data.itemName.S
       })
     })
-
     return formattedData;
   }
+
   render() {
     return (
       <GroceryList 
         data={this.state.data}
         nav={this.props.navigation}
-        refreshData={this.updateState}
+        refreshData={this.refreshData}
       />
     );
   }
@@ -143,14 +140,11 @@ export class GroceryScreen extends Component {
 export class AddScreen extends Component {
   constructor(props) {
     super(props);
-    console.log('constructing');
-
+    console.log('Constructing AddScreen');
+    console.log(this.props)
     this.state = {
       text: ""
     };
-    console.log(this.state.listItemID);
-
-
   }
 
   writeItem() {
@@ -175,13 +169,12 @@ export class AddScreen extends Component {
   }
 
   render() {
-    console.log("RENDERING");
     return (
       <View style={{marginTop: 0, padding: 10, flex: 1}}>
         <Text>Item Name</Text>
         <TextInput
           style={{height: 40, backgroundColor: 'white', borderColor: 'gray', borderWidth: 1}}
-          onChangeText={(text) => {this.setState({text}); console.log(text)}}
+          onChangeText={(text) => {this.setState({text})}}
           value={this.state.text}
           editable = {true}
           maxLength = {40}
@@ -189,9 +182,7 @@ export class AddScreen extends Component {
         <Button 
           title="Add item to list"
           onPress={() => {
-            console.log('t');
-            console.log(this.state.text);
-            console.log('t');
+            console.log('Adding ' + this.state.text + ' to grocery list');
             this.writeItem();
             this.props.navigation.goBack();
             }
@@ -207,13 +198,12 @@ export class AddScreen extends Component {
 export class EditScreen extends Component {
   constructor(props) {
     super(props);
-    console.log('constructing');
+    console.log('Constructing EditScreen');
     console.log(this.props);
     this.state = {
       listItemID: this.props.navigation.state.params.selected.id,
       text: this.props.navigation.state.params.selected.name
     }
-
   }
 
   // boughtItem() {
@@ -238,8 +228,6 @@ export class EditScreen extends Component {
   // }
 
   deleteItem() {
-    console.log(this.state.listItemID)
-    console.log(this.state.text)
     var params = {
       Key: {
         "listItemID": {
@@ -250,8 +238,7 @@ export class EditScreen extends Component {
     }
     ddb.deleteItem(params,
     (err, data) => {
-      console.log(err);
-      console.log(data);
+      console.log('Probably deleted ' + this.state.text);
     });
   }
 
@@ -264,6 +251,7 @@ export class EditScreen extends Component {
           title="Delete item"
           onPress={() => {
             this.deleteItem();
+            this.props.navigation.state.params.refresh();
             this.props.navigation.goBack();
             }
           }

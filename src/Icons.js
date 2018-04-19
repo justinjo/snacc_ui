@@ -43,7 +43,11 @@ export class AddIcon extends Component {
         <Icon
           name="add"
           size={35}
-          onPress={ () => this.props.nav.navigate('Add') }
+          onPress={() => this.props.nav.navigate('Add',
+            {
+              // test: this
+            }
+          )}
         />
       </View>
     );

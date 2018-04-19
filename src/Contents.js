@@ -10,20 +10,18 @@ import {
 } from 'react-native';
 import { List, ListItem } from 'react-native-elements';
 import AWS from 'aws-sdk/dist/aws-sdk-react-native';
+import Amplify from 'aws-amplify';
 
 var secrets = require('./Secrets.js');
 
 class FlatScreen extends Component {
   constructor(props) {
     super(props);
-    // this.state.value = 0;
     this.state = {
       refreshing: false,
       pressed: false,
     };
   }
-
-
 
   renderSingle(item) {
     return( this.state.pressed ?
@@ -43,18 +41,17 @@ class FlatScreen extends Component {
   
   
   _onRefresh() {
-    console.log("refreshing");
+    console.log("Refreshing FridgeList");
     this.setState({refreshing: true});
     if (this.props.refreshData()) {
-      console.log("fetched");
+      console.log("Successfully refreshed fridge data");
       this.setState({refreshing: false});
     } else {
-      console.log("error");
+      console.log("Could not refresh fridge data");
     }
   }
 
   render() {
-    console.log(this.props.data);
     return(
         <List containerStyle={{marginTop: 0, flex: 1}}>
           <FlatList
@@ -84,12 +81,11 @@ class FlatScreen extends Component {
 export class FridgeScreen extends Component {
   constructor(props) {
     super(props);
-    console.log('constructing');
+    console.log('Constructing FridgeScreen');
 
     this.state = {
       data: [],
     };
-
 
     this.params = { TableName: "fridgeItems" };
   }
@@ -104,16 +100,12 @@ export class FridgeScreen extends Component {
   }.bind(this);
 
   fetchData = function(err, data) {
-    console.log('Fetching data');
+    console.log('Fetching fridge data...');
     if (err) {
       console.log("Error", err);
     } else {
-      console.log('fetched data:')
-      console.log(data);
-      // console.log(data.Items);
-      // this.setState({data: data.Items});
+      console.log('Updated fridge data');
       this.setState({data: this.formatData(data)});
-      // console.log(this.state.data);
     }
   }.bind(this);
 
@@ -125,7 +117,6 @@ export class FridgeScreen extends Component {
         name: data.itemType.S
       })
     })
-
     return formattedData;
   }
 
