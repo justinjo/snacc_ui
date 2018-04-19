@@ -23,3 +23,4 @@ yarn-error.log*
 .babelrc
 .flowconfig
 .watchmanconfig
+package-lock.json

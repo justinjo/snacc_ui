@@ -5,7 +5,8 @@ import {
   ScrollView,
   StyleSheet,
   Platform,
-  FlatList
+  FlatList,
+  RefreshControl
 } from 'react-native';
 import { List, ListItem } from 'react-native-elements';
 import AWS from 'aws-sdk/dist/aws-sdk-react-native';
@@ -16,13 +17,16 @@ class FlatScreen extends Component {
   constructor(props) {
     super(props);
     // this.state.value = 0;
-    this.value = 0;
+    this.state = {
+      refreshing: false,
+      pressed: false,
+    };
   }
 
 
 
   renderSingle(item) {
-    return( this.value ?
+    return( this.state.pressed ?
       <ListItem
         roundAvatar
         title="pressed"
@@ -37,13 +41,32 @@ class FlatScreen extends Component {
     );
   }
   
+  
+  _onRefresh() {
+    console.log("refreshing");
+    this.setState({refreshing: true});
+    if (this.props.refreshData()) {
+      console.log("fetched");
+      this.setState({refreshing: false});
+    } else {
+      console.log("error");
+    }
+  }
 
   render() {
+    console.log(this.props.data);
     return(
         <List containerStyle={{marginTop: 0, flex: 1}}>
           <FlatList
             data={this.props.data}
+            keyExtractor={(item, index) => item.key}
             renderItem={({item}) => (this.renderSingle(item))}
+            refreshControl={
+              <RefreshControl
+                refreshing={this.state.refreshing}
+                onRefresh={this._onRefresh.bind(this)}
+              />
+            }
           />
         </List>
     );
@@ -72,15 +95,21 @@ export class FridgeScreen extends Component {
   }
 
   componentDidMount = function() {
-    ddb.scan(this.params, this.fetchData);
+    this.refreshData();
   };
 
+  refreshData = function() {
+    ddb.scan(this.params, this.fetchData);
+    return true;
+  }.bind(this);
+
   fetchData = function(err, data) {
-    console.log('test');
+    console.log('Fetching data');
     if (err) {
       console.log("Error", err);
     } else {
-      // console.log(data);
+      console.log('fetched data:')
+      console.log(data);
       // console.log(data.Items);
       // this.setState({data: data.Items});
       this.setState({data: this.formatData(data)});
@@ -92,8 +121,8 @@ export class FridgeScreen extends Component {
     formattedData = [];
     data.Items.forEach((data) => {
       formattedData.push({
-        key: data.itemName.S,
-        name: data.itemName.S
+        key: data.itemID.N,
+        name: data.itemType.S
       })
     })
 
@@ -102,7 +131,7 @@ export class FridgeScreen extends Component {
 
   render() {
     return (
-      <FlatScreen data={this.state.data} />
+      <FlatScreen data={this.state.data} refreshData={this.refreshData} />
     );
   }
 }

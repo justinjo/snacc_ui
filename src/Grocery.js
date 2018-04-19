@@ -8,7 +8,8 @@ import {
   FlatList,
   TextInput,
   Button,
-  Alert
+  Alert,
+  RefreshControl
 } from 'react-native';
 import { List, ListItem, Icon } from 'react-native-elements';
 import AWS from 'aws-sdk/dist/aws-sdk-react-native';
@@ -18,11 +19,14 @@ var secrets = require('./Secrets.js');
 class GroceryList extends Component {
   constructor(props) {
     super(props);
-    this.state = 0;
+    this.state = {
+      refreshing: false,
+      pressed: false,
+    };
   }
 
   renderSingle(item) {
-    return( this.state ?
+    return( this.state.pressed ?
       <ListItem
         roundAvatar
         title="pressed"
@@ -37,7 +41,18 @@ class GroceryList extends Component {
       />
     );
   }
-  
+
+  _onRefresh() {
+    console.log("refreshing");
+    this.setState({refreshing: true});
+    if (this.props.refreshData()) {
+      console.log("fetched");
+      this.setState({refreshing: false});
+      console.log(this.props.data)
+    } else {
+      console.log("error");
+    }
+  }
 
   render() {
     return(
@@ -46,6 +61,12 @@ class GroceryList extends Component {
             data={this.props.data}
             keyExtractor={(item, index) => item.id}
             renderItem={({item}) => (this.renderSingle(item))}
+            refreshControl={
+              <RefreshControl
+                refreshing={this.state.refreshing}
+                onRefresh={this._onRefresh.bind(this)}
+              />
+            }
           />
         </List>
     );
@@ -57,25 +78,6 @@ class GroceryList extends Component {
   }
 }
 
-
-
-class DeleteIcon extends Component {
-  constructor(props) {
-    super(props);
-  }
-
-  render() {
-    return (
-      <View style={styles.leftIcon}>
-        <Icon
-          name="menu"
-          size={35}
-          onPress={ () => this.props.nav.navigate('DrawerOpen') }
-        />
-      </View>
-    );
-  }
-}
 
 export class GroceryScreen extends Component {
   constructor(props) {
@@ -97,6 +99,9 @@ export class GroceryScreen extends Component {
 
   updateState = function() {
     ddb.scan(this.params, this.fetchData);
+    // console.log(this);
+    // console.log(this.state.data);
+    return true;
   }
 
   fetchData = function(err, data) {
@@ -116,7 +121,7 @@ export class GroceryScreen extends Component {
     formattedData = [];
     data.Items.forEach((data) => {
       formattedData.push({
-        id: data.itemID.N,
+        id: data.listItemID.N,
         name: data.itemName.S
       })
     })
@@ -125,12 +130,14 @@ export class GroceryScreen extends Component {
   }
   render() {
     return (
-      <GroceryList data={this.state.data} nav={this.props.navigation} />
+      <GroceryList 
+        data={this.state.data}
+        nav={this.props.navigation}
+        refreshData={this.updateState}
+      />
     );
   }
 }
-
-
 
 
 export class AddScreen extends Component {
@@ -141,7 +148,7 @@ export class AddScreen extends Component {
     this.state = {
       text: ""
     };
-    console.log(this.state.itemID);
+    console.log(this.state.listItemID);
 
 
   }
@@ -149,7 +156,7 @@ export class AddScreen extends Component {
   writeItem() {
     var params = {
       Item: {
-        "itemID": {
+        "listItemID": {
           N: (+new Date()).toString()
         },
         "itemName": {
@@ -161,8 +168,9 @@ export class AddScreen extends Component {
     }
     ddb.putItem(params,
     (err, data) => {
-      console.log(err);
-      console.log(data);
+      if (err) {
+        console.log("Error", err);
+      }
     });
   }
 
@@ -181,7 +189,9 @@ export class AddScreen extends Component {
         <Button 
           title="Add item to list"
           onPress={() => {
+            console.log('t');
             console.log(this.state.text);
+            console.log('t');
             this.writeItem();
             this.props.navigation.goBack();
             }
@@ -193,13 +203,14 @@ export class AddScreen extends Component {
   }
 }
 
+
 export class EditScreen extends Component {
   constructor(props) {
     super(props);
     console.log('constructing');
     console.log(this.props);
     this.state = {
-      itemID: this.props.navigation.state.params.selected.id,
+      listItemID: this.props.navigation.state.params.selected.id,
       text: this.props.navigation.state.params.selected.name
     }
 
@@ -211,7 +222,7 @@ export class EditScreen extends Component {
   //       "itemID": {
   //         N: (+new Date()).toString()
   //       },
-  //       "itemName": {
+  //       "itemType": {
   //         S: this.state.text
   //       },
   //     }, 
@@ -226,14 +237,13 @@ export class EditScreen extends Component {
   //   this.deleteItem();
   // }
 
-
   deleteItem() {
-    console.log(this.state.itemID)
+    console.log(this.state.listItemID)
     console.log(this.state.text)
     var params = {
       Key: {
-        "itemID": {
-          N: this.state.itemID
+        "listItemID": {
+          N: this.state.listItemID
         },
       }, 
       TableName: "shoppingList"

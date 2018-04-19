@@ -9,88 +9,10 @@ import {
 } from 'react-native';
 import { List, ListItem, Icon } from 'react-native-elements';
 import { StackNavigator, DrawerNavigator } from 'react-navigation';
-import { FridgeScreen } from './Contents'
+import { FridgeScreen } from './Contents';
 import { GroceryScreen, AddScreen, EditScreen } from './Grocery'
+import { DrawerIcon, AddIcon, CancelIcon, SubmitIcon } from './Icons'
 
-class DrawerIcon extends Component {
-  constructor(props) {
-    super(props);
-  }
-
-  render() {
-    return (
-      <View style={styles.leftIcon}>
-        <Icon
-          name="menu"
-          size={35}
-          onPress={ () => this.props.nav.navigate('DrawerOpen') }
-        />
-      </View>
-    );
-  }
-}
-
-class AddIcon extends Component {
-  constructor(props) {
-    super(props);
-  }
-
-  render() {
-    return (
-      <View style={styles.rightIcon}>
-        <Icon
-          name="add"
-          size={35}
-          onPress={ () => this.props.nav.navigate('Add') }
-        />
-      </View>
-    );
-  }
-}
-
-class CancelIcon extends Component {
-  constructor(props) {
-    super(props);
-  }
-
-  render() {
-    return (
-      <View style={styles.leftIcon}>
-        <Icon
-          name="keyboard-arrow-left"
-          size={35}
-          onPress={ 
-            () => {
-              this.props.nav.goBack(); 
-            }
-          }
-        />
-      </View>
-    );
-  }
-}
-
-class SubmitIcon extends Component {
-  constructor(props) {
-    super(props);
-  }
-
-  render() {
-    return (
-      <View style={styles.rightIcon}>
-        <Icon
-          name="create"
-          size={35}
-          onPress={ 
-            () => {
-              this.props.nav.goBack(); 
-            }
-          }
-        />
-      </View>
-    );
-  }
-}
 
 const FridgeStack = StackNavigator({
   FridgeScreen: {
@@ -101,6 +23,7 @@ const FridgeStack = StackNavigator({
     }),
   },
 });
+
 
 const GroceryStack = StackNavigator({
   GroceryScreen: {
@@ -131,7 +54,6 @@ const GroceryStack = StackNavigator({
 });
 
 
-
 export const Root = DrawerNavigator({
   FridgeScreen: {
     screen: FridgeStack,
@@ -147,21 +69,4 @@ export const Root = DrawerNavigator({
   },
 }, {
   drawerWidth: 300
-});
-
-
-
-const styles = StyleSheet.create({
-  listItem: {
-    fontSize: 100,
-  },
-
-  leftIcon: {
-    paddingLeft: 10,
-  },
-
-  rightIcon: {
-    paddingRight: 10,
-  },
-
 });
